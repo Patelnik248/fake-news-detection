@@ -27,9 +27,9 @@ def test_health_check(client):
     assert data["status"] == "ok"
 
 
-# ── Test: Index route ────────────────────────────────────────
-def test_index(client):
-    res = client.get("/")
+# ── Test: API Info route ─────────────────────────────────────
+def test_api_info(client):
+    res = client.get("/api/info")
     assert res.status_code == 200
     assert "Fake News" in res.get_json()["service"]
 

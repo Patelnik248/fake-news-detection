@@ -31,7 +31,7 @@ pipeline {
             steps {
                 echo "==> Installing dependencies and running tests..."
                 sh """
-                    pip install --quiet --break-system-packages -r requirements.txt
+                    pip install --quiet --break-system-packages -r requirements.txt pytest
                     python -m pytest tests/ -v --tb=short
                 """
             }
@@ -56,17 +56,16 @@ pipeline {
         stage("Build Docker Image") {
             steps {
                 echo "==> Building Docker image: ${IMAGE_NAME}:${IMAGE_TAG}..."
-                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -t ${IMAGE_NAME}:latest ."
+                sh "docker build -t \${IMAGE_NAME}:\${IMAGE_TAG} -t \${IMAGE_NAME}:latest ."
             }
         }
 
         // Stage 5: Deploy with docker-compose
         stage("Deploy") {
             steps {
-                echo "==> Deploying all containers..."
+                echo "==> Deploying flask-api and nginx..."
                 sh """
-                    docker-compose -f ${COMPOSE_FILE} down --remove-orphans
-                    docker-compose -f ${COMPOSE_FILE} up -d --build
+                    docker compose -f ${COMPOSE_FILE} up -d --build flask-api nginx
                 """
             }
         }
@@ -76,8 +75,8 @@ pipeline {
             steps {
                 echo "==> Waiting for API to start..."
                 sh """
-                    sleep 15
-                    curl --fail http://localhost/health || exit 1
+                    sleep 10
+                    curl --fail http://flask-api:5001/health || curl --fail http://localhost:5001/health || exit 1
                     echo "API is healthy!"
                 """
             }
