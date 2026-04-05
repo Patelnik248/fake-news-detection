@@ -31,7 +31,7 @@ pipeline {
             steps {
                 echo "==> Installing dependencies and running tests..."
                 sh """
-                    pip install --quiet --break-system-packages -r requirements.txt pytest
+                    pip install --quiet --break-system-packages flask pytest requests prometheus-client waitress
                     python -m pytest tests/ -v --tb=short
                 """
             }
