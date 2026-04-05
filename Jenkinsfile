@@ -65,7 +65,7 @@ pipeline {
             steps {
                 echo "==> Deploying flask-api and nginx..."
                 sh """
-                    docker compose -f ${COMPOSE_FILE} up -d --build flask-api nginx
+                    docker compose -p fake-news-detection -f ${COMPOSE_FILE} up -d --build flask-api nginx
                 """
             }
         }
