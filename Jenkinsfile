@@ -31,7 +31,7 @@ pipeline {
             steps {
                 echo "==> Installing dependencies and running tests..."
                 sh """
-                    pip install --quiet -r requirements.txt
+                    pip install --quiet --break-system-packages -r requirements.txt
                     python -m pytest tests/ -v --tb=short
                 """
             }
