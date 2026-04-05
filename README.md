@@ -1,126 +1,83 @@
 # Fake News Detection — MLOps Project
 
-A production-ready machine learning system that classifies news articles as **Real** or **Fake**, deployed with a full MLOps pipeline including CI/CD, monitoring, and experiment tracking.
+A fully automated, production-ready machine learning system that classifies news articles as **Real** or **Fake**. This project demonstrates a complete MLOps pipeline featuring CI/CD via Jenkins, experiment tracking via MLflow, and system monitoring via Prometheus and Grafana.
 
 ---
 
-## Team Responsibilities
+## Architecture Overview
 
-| Member | Area | Files |
-|--------|------|-------|
-| Member 1 | Data preprocessing + model training + MLflow | `src/preprocess.py`, `src/model.py`, `src/train.py`, `mlflow/mlflow_setup.py` |
-| Member 2 | Flask API + model integration + logging | `app/app.py` |
-| Member 3 | Docker + NGINX + system architecture | `Dockerfile`, `docker-compose.yml`, `nginx/nginx.conf` |
-| Member 4 | Jenkins CI/CD + Prometheus + Grafana | `Jenkinsfile`, `monitoring/prometheus.yml`, `monitoring/grafana/` |
+The system is deployed using a **Docker-out-of-Docker (DooD)** architecture managed by Docker Compose. 
+
+| Service | Technology | Purpose |
+|---------|---------|---------|
+| **API** | Flask + Waitress | Serves the ML model inferences on port 5001. |
+| **Proxy** | NGINX | Reverse proxy directing traffic to the Flask API. |
+| **Tracker** | MLflow | Logs model parameters, metrics, and manages artifacts. |
+| **CI/CD** | Jenkins | Automates the pipeline: tests code, builds images, and deploys. |
+| **Metrics** | Prometheus | Scrapes business and system metrics from the Flask API. |
+| **Dashboard**| Grafana | Visualizes API latency, request volume, and traffic over time. |
 
 ---
 
 ## Project Structure
 
-```
+```text
 fake-news-detection/
-├── data/
-│   ├── True.csv              ← Download from Kaggle
-│   ├── Fake.csv              ← Download from Kaggle
-│   └── README.md             ← Download instructions
-├── src/
-│   ├── preprocess.py         ← Data loading and cleaning
-│   ├── model.py              ← TF-IDF + Logistic Regression pipeline
-│   └── train.py              ← Training + MLflow tracking
 ├── app/
-│   └── app.py                ← Flask REST API (served by Waitress)
+│   ├── app.py                ← Flask REST API serving inferences
+│   └── static/               ← Static HTML/CSS assets for UI
+├── data/
+│   ├── Fake.csv              ← Dataset (Requires manual download)
+│   ├── True.csv              ← Dataset (Requires manual download)
+│   └── README.md             ← Data instructions
 ├── mlflow/
-│   └── mlflow_setup.py       ← MLflow utilities and run comparison
+│   └── mlflow_setup.py       ← MLflow utilities
+├── models/
+│   └── fake_news_model.pkl   ← Pre-trained ML model artifact
 ├── monitoring/
-│   ├── prometheus.yml        ← Prometheus scrape config
+│   ├── Dockerfile            ← Custom Prometheus image configuration
+│   ├── prometheus.yml        ← Scrape config
 │   └── grafana/
+│       ├── Dockerfile        ← Custom Grafana image configuration
 │       ├── datasource.yml    ← Auto-provision Prometheus data source
-│       ├── dashboard.json    ← Pre-built Grafana dashboard
-│       └── dashboards/
-│           └── provider.yml  ← Dashboard auto-load config
+│       └── dashboards/       ← Auto-loads JSON dashboards
 ├── nginx/
+│   ├── Dockerfile            ← Custom NGINX image configuration
 │   └── nginx.conf            ← Reverse proxy config
-├── tests/
-│   └── test_api.py           ← pytest API tests
 ├── scripts/
-│   ├── train_local.sh        ← Train locally (no Docker)
-│   └── test_api.sh           ← curl smoke tests
-├── models/                   ← Saved model output (auto-created)
-├── logs/                     ← App logs (auto-created)
-├── Dockerfile                ← Flask API container
-├── docker-compose.yml        ← All 6 services
-├── Jenkinsfile               ← CI/CD pipeline definition
-├── requirements.txt          ← Python dependencies
-└── .gitignore
+│   ├── train_local.sh        ← Train locally script
+│   └── test_api.sh           ← curl smoke tests script
+├── src/
+│   ├── preprocess.py         ← Text cleaning and feature engineering
+│   ├── model.py              ← Logistic Regression + TF-IDF logic
+│   └── train.py              ← Model training & evaluation 
+├── tests/
+│   └── test_api.py           ← Pytest suite for the Flask API
+├── docker-compose.yml        ← Composes the 6-service ecosystem
+├── Dockerfile                ← Builds the Flask API image
+├── Dockerfile.jenkins        ← Builds Jenkins with Docker runtime access
+└── Jenkinsfile               ← CI/CD pipeline definition
 ```
 
 ---
 
 ## Quickstart
 
-### Step 1 — Get the dataset
+### Step 1: Prepare the Dataset
+Download `True.csv` and `Fake.csv` from Kaggle and place them in the `data/` directory:
+[Fake and Real News Dataset](https://www.kaggle.com/datasets/clmentbisaillon/fake-and-real-news-dataset)
 
-Download `True.csv` and `Fake.csv` from Kaggle and place them in `data/`:
-
-```
-https://www.kaggle.com/datasets/clmentbisaillon/fake-and-real-news-dataset
-```
-
-### Step 2 — Install Python dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### Step 3 — Start all Docker services
-
+### Step 2: Spin Up the Stack
+Ensure Docker is running and launch the entire stack:
 ```bash
 docker-compose up -d --build
 ```
 
-This starts 6 containers:
-
-| Container | URL | Purpose |
-|-----------|-----|---------|
-| `nginx` | http://localhost | Reverse proxy (entry point) |
-| `flask-api` | http://localhost:5001 | Prediction API |
-| `mlflow` | http://localhost:5000 | Experiment tracking UI |
-| `jenkins` | http://localhost:8080 | CI/CD server |
-| `prometheus` | http://localhost:9090 | Metrics collection |
-| `grafana` | http://localhost:3000 | Dashboards (admin/admin123) |
-
-### Step 4 — Train the model
-
-```bash
-# Inside Docker (recommended)
-docker exec flask-api python src/train.py
-
-# Or locally
-bash scripts/train_local.sh
-```
-
-### Step 5 — Make predictions
-
-**Using curl:**
-```bash
-curl -X POST http://localhost/predict \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Your news article text goes here..."}'
-```
-
-**Expected response:**
-```json
-{
-  "label": "Real",
-  "confidence": 0.9421,
-  "is_fake": false
-}
-```
-
-**Using the smoke test script:**
-```bash
-bash scripts/test_api.sh
-```
+### Step 3: Access the Services
+*   **Web Interface (Prediction):** `http://localhost`
+*   **Jenkins (CI/CD):** `http://localhost:8080` (admin / 7e09ed458ae047cd95da059d46edaa52)
+*   **Grafana (Monitoring):** `http://localhost:3000` (admin / admin123)
+*   **MLflow (Experiment Tracking):** `http://localhost:5000`
 
 ---
 
@@ -128,145 +85,39 @@ bash scripts/test_api.sh
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/` | Service info |
-| `GET` | `/health` | Health check — returns `{"status":"ok"}` |
-| `POST` | `/predict` | Classify a news article |
-| `GET` | `/metrics` | Prometheus metrics scrape endpoint |
+| `GET` | `/` | Serves the Web Frontend (HTML UI) |
+| `GET` | `/health` | Health check endpoint for Docker compose/Jenkins validation |
+| `GET` | `/api/info` | General service schema info |
+| `POST` | `/predict` | Receives JSON payload with news text and returns classification |
+| `GET` | `/metrics` | Exposed endpoint for Prometheus tracking |
 
-### POST /predict — Request body
-
-```json
-{ "text": "Full article text here (minimum 10 characters)" }
-```
-
-### POST /predict — Response
-
-```json
-{
-  "label": "Real",        // or "Fake"
-  "confidence": 0.94,     // probability of the predicted class
-  "is_fake": false        // boolean convenience field
-}
-```
-
----
-
-## ML Pipeline
-
-```
-True.csv + Fake.csv
-       ↓
-  load_data()           — concat + label (1=Real, 0=Fake)
-       ↓
-  clean_text()          — lowercase, remove URLs/HTML/punctuation
-       ↓
-  train_test_split()    — 80% train / 20% test
-       ↓
-  TfidfVectorizer       — top 50k features, unigrams + bigrams
-       ↓
-  LogisticRegression    — binary classifier
-       ↓
-  evaluate()            — accuracy, precision, recall, F1
-       ↓
-  MLflow.log_*()        — track params, metrics, model artifact
-       ↓
-  save_model()          — pickle to models/fake_news_model.pkl
-```
-
----
-
-## MLflow — Experiment Tracking
-
-Open the MLflow UI at **http://localhost:5000**
-
-- View all training runs
-- Compare metrics (accuracy, F1, precision, recall)
-- Download saved model artifacts
-- Register models in the model registry
-
-**From code:**
+**Prediction Usage Example:**
 ```bash
-python mlflow/mlflow_setup.py    # list all runs
+curl -X POST http://localhost/predict \
+  -H "Content-Type: application/json" \
+  -d '{"text": "The stock market rose sharply on Friday following better-than-expected jobs data."}'
 ```
 
 ---
 
-## Monitoring
+## Machine Learning Pipeline
 
-### Prometheus — http://localhost:9090
-
-Metrics collected from the Flask API:
-
-| Metric | Type | Description |
-|--------|------|-------------|
-| `api_request_count_total` | Counter | Requests by endpoint + status code |
-| `api_request_latency_seconds` | Histogram | Response time (p50, p95, p99) |
-| `api_prediction_count_total` | Counter | Predictions split by real/fake |
-
-### Grafana — http://localhost:3000
-
-Login: `admin` / `admin123`
-
-The dashboard auto-loads and shows:
-- API request rate over time
-- p50/p95 latency
-- Prediction volume (real vs fake)
-- Error rate (5xx responses)
+1. **Preprocessing:** Combines real and fake datasets, cleans text (removes URLs, punctuation, and extra whitespace), and lowers casing.
+2. **Feature Extraction:** Uses `TfidfVectorizer` (top 50k features, unigrams+bigrams).
+3. **Training:** Trains a `LogisticRegression` binary classifier.
+4. **Tracking:** Logs accuracy, precision, recall, and F1 scores directly to the MLflow dashboard.
+5. **Storage:** The model is serialized (`models/fake_news_model.pkl`) and committed to Git, enabling seamless containerization without localized volume sharing.
 
 ---
 
-## Jenkins CI/CD — http://localhost:8080
+## CI/CD Pipeline (Jenkins)
 
-### First-time setup
-1. Open Jenkins at http://localhost:8080
-2. Get the initial admin password:
-   ```bash
-   docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
-   ```
-3. Install suggested plugins
-4. Create a new **Pipeline** job pointing to your GitHub repo
-5. Jenkins uses `Jenkinsfile` from the root of the repo
+The pipeline is fully automated and triggered directly from GitHub:
+1. **Checkout:** Pulls the latest main branch from the remote repository.
+2. **Test:** Spins up a lightweight python environment to run `pytest`. Mock ML inferences assure logic works cleanly without needing model dependencies.
+3. **Train:** (Optional stage) Can execute `train.py` dynamically if data or internal logic signatures change.
+4. **Build Docker Image:** Packages the latest Flask API backend securely with the finalized model.
+5. **Deploy:** Leverages `docker compose` to gracefully swap the `flask-api` and `nginx` configurations without tearing the system down.
+6. **Health Check:** Submits HTTP pings to assure Waitress successfully bonded to the port.
 
-### Pipeline stages
-
-```
-Checkout → Test → Train Model (if changed) → Build Image → Deploy → Health Check
-```
-
----
-
-## Running Tests
-
-```bash
-# Run all tests
-pytest tests/ -v
-
-# Run with coverage
-pytest tests/ -v --cov=app --cov=src
-```
-
----
-
-## Postman Collection
-
-Import this into Postman for quick testing:
-
-**Health Check**
-- `GET http://localhost/health`
-
-**Predict — Real news**
-- `POST http://localhost/predict`
-- Body (JSON): `{"text": "The stock market rose sharply on Friday following better-than-expected jobs data from the Labor Department."}`
-
-**Predict — Fake news**
-- `POST http://localhost/predict`  
-- Body (JSON): `{"text": "NASA confirms flat earth theory after secret documents leaked by anonymous whistleblower reveal decades-long cover-up."}`
-
----
-
-## Stopping All Services
-
-```bash
-docker-compose down          # stop containers
-docker-compose down -v       # stop + remove volumes (full reset)
-```
+*(Note: Jenkins uses a DooD architecture, meaning `docker build` maps directly back to the host machine's resources).*
