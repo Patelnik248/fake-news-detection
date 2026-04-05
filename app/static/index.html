@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake News Detection — AI Classifier</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📰</text></svg>">
+</head>
+
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <main class="container">
+        <header>
+            <div class="logo">
+                <span class="logo-icon">🛡️</span>
+                <h1>FakeNews<span class="accent">Detector</span></h1>
+            </div>
+            <p class="subtitle">Advanced Machine Learning for Article Verification</p>
+        </header>
+
+        <section class="classifier-card">
+            <div class="input-group">
+                <label for="news-text">Enter News Article</label>
+                <textarea id="news-text"
+                    placeholder="Paste the content of a news article here (minimum 10 characters)..."
+                    autofocus></textarea>
+                <div class="char-count"><span id="current-count">0</span> characters</div>
+            </div>
+
+            <button id="predict-btn" class="primary-btn">
+                <span class="btn-text">Verify Article</span>
+                <div class="spinner"></div>
+            </button>
+        </section>
+
+        <section id="result-container" class="result-card hidden">
+            <div class="result-header">
+                <div id="result-badge" class="badge">FAKE</div>
+                <div class="confidence-info">
+                    <span class="label">Confidence Score</span>
+                    <span id="confidence-value" class="value">94.2%</span>
+                </div>
+            </div>
+
+            <div class="confidence-bar-container">
+                <div id="confidence-bar" class="confidence-bar" style="width: 94.2%;"></div>
+            </div>
+
+            <div class="result-details">
+                <p id="result-message">This article shows high indicators of being <strong
+                        id="result-type">Fake</strong> news based on our ML analysis.</p>
+            </div>
+
+            <button id="reset-btn" class="secondary-btn">Clear & Start Over</button>
+        </section>
+
+    </main>
+
+    <script src="/static/script.js"></script>
+</body>
+
+</html>

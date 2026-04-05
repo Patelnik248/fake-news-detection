@@ -1,0 +1,32 @@
+# =============================================================
+# Dockerfile.jenkins — Custom Jenkins Agent with Docker CLI
+# Allows Jenkins to run 'docker' and 'docker-compose' commands
+# =============================================================
+
+FROM jenkins/jenkins:lts-jdk17
+
+USER root
+
+# Install dependencies for Docker CLI
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
+
+# Add Docker's official GPG key and repository
+RUN mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | \
+    tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Install Docker CLI and Docker Compose Plugin
+RUN apt-get update && apt-get install -y \
+    docker-ce-cli \
+    docker-compose-plugin
+
+# Add 'jenkins' user to the root group to allow access to docker.sock
+# (Socket is owned by root:root on this system)
+RUN usermod -aG root jenkins || true
+
+USER jenkins

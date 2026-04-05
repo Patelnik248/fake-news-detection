@@ -1,0 +1,2 @@
+# This folder stores the trained model file: fake_news_model.pkl
+# It is created automatically when you run: python src/train.py
