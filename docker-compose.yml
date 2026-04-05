@@ -16,8 +16,8 @@ services:
     ports:
       - "5001:5001"
     volumes:
-      - ./models:/app/models       # share trained model
-      - ./logs:/app/logs           # persist logs
+      - models-data:/app/models    # use named volume if needed or nothing since it's copied
+      - logs-data:/app/logs        # persist logs
     environment:
       - MLFLOW_TRACKING_URI=http://mlflow:5000
       - PORT=5001
@@ -35,12 +35,10 @@ services:
 
   # ── 2. NGINX Reverse Proxy ────────────────────────────────────
   nginx:
-    image: nginx:1.25-alpine
+    build: ./nginx
     container_name: nginx
     ports:
       - "80:80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - flask-api
     networks:
@@ -86,12 +84,11 @@ services:
 
   # ── 5. Prometheus Metrics ─────────────────────────────────────
   prometheus:
-    image: prom/prometheus:v2.52.0
+    build: ./monitoring
     container_name: prometheus
     ports:
       - "9090:9090"
     volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
@@ -102,14 +99,12 @@ services:
 
   # ── 6. Grafana Dashboard ──────────────────────────────────────
   grafana:
-    image: grafana/grafana:10.4.0
+    build: ./monitoring/grafana
     container_name: grafana
     ports:
       - "3000:3000"
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./monitoring/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
-      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin123
@@ -126,6 +121,8 @@ volumes:
   jenkins-data:
   prometheus-data:
   grafana-data:
+  models-data:
+  logs-data:
 
 # ── Shared network ────────────────────────────────────────────
 networks:
