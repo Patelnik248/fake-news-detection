@@ -7,7 +7,7 @@ flask==3.0.3
 waitress==3.0.0
 
 # ── MLflow Tracking ───────────────────────────────────────────
-mlflow>=2.13.0
+mlflow==2.13.0
 
 # ── Monitoring ────────────────────────────────────────────────
 prometheus-client==0.20.0
